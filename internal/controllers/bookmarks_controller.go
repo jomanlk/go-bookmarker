@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -67,5 +68,33 @@ func (bc *BookmarksController) CreateBookmark(c *gin.Context) {
     }
 
     // Respond with the created bookmark
+    c.JSON(http.StatusOK, gin.H{"bookmark": bookmark})
+}
+
+func (bc *BookmarksController) GetBookmark(c *gin.Context) {
+    // Extract the bookmark ID from the URL
+    id := c.Param("id")
+
+    // Initialize the repository and service
+    bookmarkRepo := repositories.NewBookmarkRepository(bc.DB)
+    bookmarkService := services.NewBookmarkService(bookmarkRepo)
+
+    // Convert the bookmark ID to an integer
+    bookmarkID, err := strconv.Atoi(id)
+    if err != nil {
+        log.Printf("Invalid bookmark ID: %v", err)
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid bookmark ID"})
+        return
+    }
+
+    // Fetch the bookmark by ID
+    bookmark, err := bookmarkService.GetBookmarkByID(bookmarkID)
+    if err != nil {
+        log.Printf("Failed to fetch bookmark: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bookmark"})
+        return
+    }
+
+    // Respond with the bookmark wrapped in the 'bookmark' key
     c.JSON(http.StatusOK, gin.H{"bookmark": bookmark})
 }
