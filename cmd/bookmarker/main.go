@@ -2,6 +2,7 @@ package main
 
 import (
 	"bookmarker/internal/controllers"
+	"bookmarker/internal/server"
 	"database/sql"
 	"log"
 	"net/http"
@@ -14,6 +15,13 @@ func setupRouter() *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
+
+	// Apply the CORS middleware from server.go
+	r.Use(func(c *gin.Context) {
+		server.CorsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			c.Next()
+		})).ServeHTTP(c.Writer, c.Request)
+	})
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
