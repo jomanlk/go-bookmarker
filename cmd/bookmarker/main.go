@@ -40,6 +40,7 @@ func setupRouter() *gin.Engine {
 	// Define routes
 	r.GET("/bookmarks", bookmarksController.GetBookmarks)
 	r.POST("/bookmarks", bookmarksController.CreateBookmark)
+	r.GET("/bookmarks/:id", bookmarksController.GetBookmark)
 
 	return r
 }
