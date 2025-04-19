@@ -11,6 +11,7 @@ type BookmarkService interface {
 	GetBookmarkByID(id int) (models.Bookmark, error)
 	ListBookmarks(page int, pageSize int) ([]models.Bookmark, error)
 	ListBookmarksByTag(tagID int, page int, pageSize int) ([]models.Bookmark, error)
+	UpdateBookmark(id int, fields map[string]interface{}) (models.Bookmark, error)
 }
 
 // bookmarkService implementation of the BookmarkService interface.
@@ -45,4 +46,11 @@ func (s *bookmarkService) ListBookmarks(page int, pageSize int) ([]models.Bookma
 func (s *bookmarkService) ListBookmarksByTag(tagID int, page int, pageSize int) ([]models.Bookmark, error) {
 	offset := (page - 1) * pageSize
 	return s.repo.ListBookmarksByTag(tagID, offset, pageSize)
+}
+
+ 
+
+// PatchBookmark updates only the provided fields of a bookmark.
+func (s *bookmarkService) UpdateBookmark(id int, fields map[string]interface{}) (models.Bookmark, error) {
+	return s.repo.UpdateBookmark(id, fields)
 }
