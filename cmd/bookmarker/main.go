@@ -41,6 +41,7 @@ func setupRouter() *gin.Engine {
 	r.GET("/bookmarks", bookmarksController.GetBookmarks)
 	r.POST("/bookmarks", bookmarksController.CreateBookmark)
 	r.GET("/bookmarks/:id", bookmarksController.GetBookmark)
+	r.PATCH("/bookmarks/:id", bookmarksController.UpdateBookmark)
 
 	return r
 }

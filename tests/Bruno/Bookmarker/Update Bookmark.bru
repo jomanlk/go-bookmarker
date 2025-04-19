@@ -1,0 +1,19 @@
+meta {
+  name: Update Bookmark
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{HOST}}/bookmarks/1
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "url":"https://www.netflix.com/",
+    "title": "Watch Netflix",
+    "description": "Website to watch streaming shows"
+  }
+}
