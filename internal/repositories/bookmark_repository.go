@@ -12,6 +12,7 @@ type BookmarkRepository interface {
 	GetBookmarkByID(id int) (models.Bookmark, error)
 	ListBookmarks(offset int, limit int) ([]models.Bookmark, error)
 	ListBookmarksByTag(tagID int, offset int, limit int) ([]models.Bookmark, error)
+	UpdateBookmark(id int, fields map[string]interface{}) (models.Bookmark, error)
 }
 
 type bookmarkRepository struct {
@@ -163,6 +164,33 @@ func (r bookmarkRepository) ListBookmarksByTag(tagID int, offset int, limit int)
     }
 
 	return bookmarks, nil
+}
+ 
+// PatchBookmark updates only the provided fields and sets updated_at to now.
+func (r bookmarkRepository) UpdateBookmark(id int, fields map[string]interface{}) (models.Bookmark, error) {
+    if len(fields) == 0 {
+        return r.GetBookmarkByID(id)
+    }
+    query := "UPDATE bookmarks SET "
+    args := []interface{}{}
+    i := 0
+    for k, v := range fields {
+        if i > 0 {
+            query += ", "
+        }
+        query += k + " = ?"
+        args = append(args, v)
+        i++
+    }
+    query += ", updated_at = ? WHERE id = ?"
+    updatedAt := time.Now().Unix()
+    args = append(args, updatedAt, id)
+
+    _, err := r.db.Exec(query, args...)
+    if err != nil {
+        return models.Bookmark{}, err
+    }
+    return r.GetBookmarkByID(id)
 }
 
 // NewBookmarkRepository creates a new instance of bookmarkRepository.
