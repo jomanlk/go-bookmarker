@@ -5,7 +5,11 @@ meta {
 }
 
 get {
-  url: {{HOST}}/bookmarks
+  url: {{HOST}}/bookmarks?page=2
   body: none
   auth: inherit
+}
+
+params:query {
+  page: 2
 }
