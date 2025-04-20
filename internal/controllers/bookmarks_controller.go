@@ -22,13 +22,26 @@ func NewBookmarksController(db *sql.DB) *BookmarksController {
 func (bc *BookmarksController) GetBookmarks(c *gin.Context) {
     // Initialize the repository and service
     bookmarkRepo := repositories.NewBookmarkRepository(bc.DB)
-    bookmarkService := services.NewBookmarkService(bookmarkRepo)
+    tagRepo := repositories.NewTagRepository(bc.DB)
+    bookmarkService := services.NewBookmarkServiceWithTags(bookmarkRepo, tagRepo)
 
-    // Pagination parameters (hardcoded for now)
-    page, pageSize := 1, 10
+    // Extract pagination parameters from the request
+    pageStr := c.DefaultQuery("page", "1")
+    pageSizeStr := c.DefaultQuery("limit", "10")
 
-    // Fetch bookmarks
-    bookmarks, err := bookmarkService.ListBookmarks(page, pageSize)
+    // Convert page and limit to integers
+    page, err := strconv.Atoi(pageStr)
+    if err != nil || page < 1 {
+        page = 1
+    }
+
+    limit, err := strconv.Atoi(pageSizeStr)
+    if err != nil || limit < 1 {
+        limit = 10
+    }
+
+    // Fetch bookmarks with tags using the service layer
+    bookmarks, err := bookmarkService.ListBookmarksWithTags(page, limit)
     if err != nil {
         log.Printf("Failed to list bookmarks: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list bookmarks"})
@@ -43,10 +56,11 @@ func (bc *BookmarksController) GetBookmarks(c *gin.Context) {
 
 func (bc *BookmarksController) CreateBookmark(c *gin.Context) {
     var input struct {
-        URL         string  `json:"url" binding:"required"`
-        Title       string  `json:"title"`
-        Description string  `json:"description"`
-        Thumbnail   string  `json:"thumbnail"`
+        URL         string   `json:"url" binding:"required"`
+        Title       string   `json:"title"`
+        Description string   `json:"description"`
+        Thumbnail   string   `json:"thumbnail"`
+        Tags        []string `json:"tags"`
     }
 
     // Bind JSON input
@@ -55,17 +69,26 @@ func (bc *BookmarksController) CreateBookmark(c *gin.Context) {
         return
     }
 
-    // Initialize the repository and service
+    // Initialize the repositories and service
     bookmarkRepo := repositories.NewBookmarkRepository(bc.DB)
-    bookmarkService := services.NewBookmarkService(bookmarkRepo)
+    tagRepo := repositories.NewTagRepository(bc.DB)
+    bookmarkService := services.NewBookmarkServiceWithTags(bookmarkRepo, tagRepo)
 
-    // Create the bookmark
-    bookmark, err := bookmarkService.CreateBookmark(input.URL, input.Title, input.Description, input.Thumbnail)
+    // Create the bookmark with tags
+    bookmark, err := bookmarkService.CreateBookmarkWithTags(input.URL, input.Title, input.Description, input.Thumbnail, input.Tags)
     if err != nil {
         log.Printf("Failed to create bookmark: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create bookmark"})
         return
     }
+    // get the tags for the bookmark
+    tags, err := tagRepo.GetTagsForBookmark(int(bookmark.ID))
+    if err != nil {
+        log.Printf("Failed to fetch tags for bookmark: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tags for bookmark"})
+        return
+    }
+    bookmark.Tags = tags
 
     // Respond with the created bookmark
     c.JSON(http.StatusOK, gin.H{"bookmark": bookmark})
@@ -77,7 +100,8 @@ func (bc *BookmarksController) GetBookmark(c *gin.Context) {
 
     // Initialize the repository and service
     bookmarkRepo := repositories.NewBookmarkRepository(bc.DB)
-    bookmarkService := services.NewBookmarkService(bookmarkRepo)
+    tagRepo := repositories.NewTagRepository(bc.DB)
+    bookmarkService := services.NewBookmarkServiceWithTags(bookmarkRepo, tagRepo)
 
     // Convert the bookmark ID to an integer
     bookmarkID, err := strconv.Atoi(id)
@@ -87,8 +111,8 @@ func (bc *BookmarksController) GetBookmark(c *gin.Context) {
         return
     }
 
-    // Fetch the bookmark by ID
-    bookmark, err := bookmarkService.GetBookmarkByID(bookmarkID)
+    // Fetch the bookmark by ID with tags
+    bookmark, err := bookmarkService.GetBookmarkWithTags(bookmarkID)
     if err != nil {
         log.Printf("Failed to fetch bookmark: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bookmark"})
@@ -108,34 +132,43 @@ func (bc *BookmarksController) UpdateBookmark(c *gin.Context) {
         return
     }
 
-    var input map[string]interface{}
+    var input struct {
+        URL         *string   `json:"url"`
+        Title       *string   `json:"title"`
+        Description *string   `json:"description"`
+        Thumbnail   *string   `json:"thumbnail"`
+        Tags        *[]string `json:"tags"`
+    }
     if err := c.ShouldBindJSON(&input); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
         return
     }
 
-    // Only allow specific fields to be updated
-    allowedFields := map[string]bool{
-        "url":        true,
-        "title":      true,
-        "description":true,
-        "thumbnail":  true,
-    }
     updateFields := make(map[string]interface{})
-    for k, v := range input {
-        if allowedFields[k] {
-            updateFields[k] = v
-        }
+    if input.URL != nil {
+        updateFields["url"] = *input.URL
     }
-    if len(updateFields) == 0 {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "No valid fields to update"})
-        return
+    if input.Title != nil {
+        updateFields["title"] = *input.Title
+    }
+    if input.Description != nil {
+        updateFields["description"] = *input.Description
+    }
+    if input.Thumbnail != nil {
+        updateFields["thumbnail"] = *input.Thumbnail
     }
 
     bookmarkRepo := repositories.NewBookmarkRepository(bc.DB)
-    bookmarkService := services.NewBookmarkService(bookmarkRepo)
+    tagRepo := repositories.NewTagRepository(bc.DB)
+    bookmarkService := services.NewBookmarkServiceWithTags(bookmarkRepo, tagRepo)
 
-    updatedBookmark, err := bookmarkService.UpdateBookmark(bookmarkID, updateFields)
+    var updatedBookmark interface{}
+    if input.Tags != nil {
+        // Update tags as well
+        updatedBookmark, err = bookmarkService.UpdateBookmarkWithTags(bookmarkID, updateFields, *input.Tags)
+    } else {
+        updatedBookmark, err = bookmarkService.UpdateBookmark(bookmarkID, updateFields)
+    }
     if err != nil {
         log.Printf("Failed to update bookmark: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update bookmark"})
