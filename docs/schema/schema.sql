@@ -21,7 +21,6 @@ CREATE TABLE "bookmark_tag" (
 	"bookmark_id"	INTEGER NOT NULL,
 	"tag_id"	INTEGER NOT NULL,
 	"created_at"	INTEGER,
-	"updated_at"	INTEGER,
 	FOREIGN KEY("bookmark_id") REFERENCES "bookmarks"("id") ON DELETE CASCADE,
 	FOREIGN KEY("tag_id") REFERENCES "tags" ON DELETE CASCADE
-)
+);

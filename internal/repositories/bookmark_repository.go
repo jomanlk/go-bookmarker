@@ -53,8 +53,8 @@ func (r bookmarkRepository) CreateBookmark(url, title, description, thumbnail st
         Title:       title,
         Description: &description,
         Thumbnail:   &thumbnail,
-        CreatedAt:   time.Unix(createdAt, 0),
-        UpdatedAt:   time.Unix(createdAt, 0),
+        CreatedAt:   createdAt,
+        UpdatedAt:   createdAt,
     }, nil
 }
 
@@ -69,9 +69,8 @@ func (r bookmarkRepository) GetBookmarkByID(id int) (models.Bookmark, error) {
 	row := r.db.QueryRow(query, id)
 
 	var bookmark models.Bookmark
-	var createdAt, updatedAt int64
 
-	err := row.Scan(&bookmark.ID, &bookmark.Title, &bookmark.Description, &bookmark.Thumbnail, &bookmark.URL, &createdAt, &updatedAt)
+	err := row.Scan(&bookmark.ID, &bookmark.Title, &bookmark.Description, &bookmark.Thumbnail, &bookmark.URL, &bookmark.CreatedAt, &bookmark.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return models.Bookmark{}, nil // No result found
 	}
@@ -79,8 +78,6 @@ func (r bookmarkRepository) GetBookmarkByID(id int) (models.Bookmark, error) {
 		return models.Bookmark{}, err
 	}
 
-	bookmark.CreatedAt = time.Unix(createdAt, 0)
-	bookmark.UpdatedAt = time.Unix(updatedAt, 0)
 	return bookmark, nil
 }
 
@@ -101,17 +98,10 @@ func (r bookmarkRepository) ListBookmarks(offset int, limit int) ([]models.Bookm
     var bookmarks []models.Bookmark
     for rows.Next() {
         var bookmark models.Bookmark
-        var createdAt, updatedAt int64 // Temporary variables for timestamps
-
-        err := rows.Scan(&bookmark.ID, &bookmark.Title, &bookmark.Description, &bookmark.Thumbnail, &bookmark.URL, &createdAt, &updatedAt)
+        err := rows.Scan(&bookmark.ID, &bookmark.Title, &bookmark.Description, &bookmark.Thumbnail, &bookmark.URL, &bookmark.CreatedAt, &bookmark.UpdatedAt)
         if err != nil {
             return nil, err
         }
-
-        // Convert UNIX timestamps to time.Time
-        bookmark.CreatedAt = time.Unix(createdAt, 0)
-        bookmark.UpdatedAt = time.Unix(updatedAt, 0)
-
         bookmarks = append(bookmarks, bookmark)
     }
 
