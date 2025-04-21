@@ -1,0 +1,15 @@
+meta {
+  name: Search Bookmarks
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{HOST}}/search?q=netflix
+  body: none
+  auth: inherit
+}
+
+params:query {
+  q: netflix
+}

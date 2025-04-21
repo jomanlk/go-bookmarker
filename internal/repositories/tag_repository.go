@@ -46,7 +46,7 @@ func (r tagRepository) CreateTag(name string) (models.Tag, error) {
 
 // AddTagToBookmark associates a tag with a bookmark.
 func (r tagRepository) AddTagToBookmark(bookmarkID int, tagID int) error {
-	query := `INSERT INTO bookmark_tag (bookmark_id, tag_id, created_at) VALUES (?, ?, CURRENT_TIMESTAMP)`
+	query := `INSERT INTO bookmarks_tags (bookmark_id, tag_id, created_at) VALUES (?, ?, CURRENT_TIMESTAMP)`
 
 	_, err := r.db.Exec(query, bookmarkID, tagID)
 	return err
@@ -57,7 +57,7 @@ func (r tagRepository) GetTagsForBookmark(bookmarkID int) ([]models.BookmarkTag,
 	query := `
 		SELECT t.id, t.name
 		FROM tags t
-		INNER JOIN bookmark_tag bt ON t.id = bt.tag_id
+		INNER JOIN bookmarks_tags bt ON t.id = bt.tag_id
 		WHERE bt.bookmark_id = ?
 	`
 
@@ -154,7 +154,7 @@ func (r tagRepository) GetAndCreateTagsIfMissing(tagNames []string) ([]models.Ta
 
 // RemoveAllTagsFromBookmark removes all tags associated with a bookmark.
 func (r tagRepository) RemoveAllTagsFromBookmark(bookmarkID int) error {
-	query := `DELETE FROM bookmark_tag WHERE bookmark_id = ?`
+	query := `DELETE FROM bookmarks_tags WHERE bookmark_id = ?`
 	_, err := r.db.Exec(query, bookmarkID)
 	return err
 }

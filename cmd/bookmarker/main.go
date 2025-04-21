@@ -36,12 +36,16 @@ func setupRouter() *gin.Engine {
 
 	// Initialize controllers
 	bookmarksController := controllers.NewBookmarksController(db)
+	searchController := controllers.NewSearchController(db)
 
 	// Define routes
 	r.GET("/bookmarks", bookmarksController.GetBookmarks)
 	r.POST("/bookmarks", bookmarksController.CreateBookmark)
 	r.GET("/bookmarks/:id", bookmarksController.GetBookmark)
 	r.PATCH("/bookmarks/:id", bookmarksController.UpdateBookmark)
+	// Use SearchController for /search
+	r.GET("/search", searchController.SearchBookmarks)
+	r.GET("/search-by-tag", searchController.GetBookmarksByTag)
 
 	return r
 }

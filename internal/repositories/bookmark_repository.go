@@ -13,6 +13,8 @@ type BookmarkRepository interface {
 	ListBookmarks(offset int, limit int) ([]models.Bookmark, error)
 	ListBookmarksByTag(tagID int, offset int, limit int) ([]models.Bookmark, error)
 	UpdateBookmark(id int, fields map[string]interface{}) (models.Bookmark, error)
+	// SearchBookmarks performs a paginated text search on title, url, or description
+	SearchBookmarks(query string, offset int, limit int) ([]models.Bookmark, error)
 }
 
 type bookmarkRepository struct {
@@ -122,7 +124,7 @@ func (r bookmarkRepository) ListBookmarksByTag(tagID int, offset int, limit int)
 	query := `
 		SELECT b.id, b.title, b.description, b.thumbnail, b.url, b.created_at, b.updated_at
 		FROM bookmarks b
-		INNER JOIN bookmark_tag bt ON b.id = bt.bookmark_id
+		INNER JOIN bookmarks_tags bt ON b.id = bt.bookmark_id
 		WHERE bt.tag_id = ?
 		LIMIT ? OFFSET ?
 	`
@@ -181,6 +183,38 @@ func (r bookmarkRepository) UpdateBookmark(id int, fields map[string]interface{}
         return models.Bookmark{}, err
     }
     return r.GetBookmarkByID(id)
+}
+
+// SearchBookmarks performs a paginated text search on title, url, or description
+func (r bookmarkRepository) SearchBookmarks(query string, offset int, limit int) ([]models.Bookmark, error) {
+    likeQuery := "%" + query + "%"
+    sqlQuery := `
+        SELECT id, title, description, thumbnail, url, created_at, updated_at
+        FROM bookmarks
+        WHERE title LIKE ? OR url LIKE ? OR description LIKE ?
+        LIMIT ? OFFSET ?
+    `
+    rows, err := r.db.Query(sqlQuery, likeQuery, likeQuery, likeQuery, limit, offset)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+    var bookmarks []models.Bookmark
+    for rows.Next() {
+        var bookmark models.Bookmark
+        err := rows.Scan(&bookmark.ID, &bookmark.Title, &bookmark.Description, &bookmark.Thumbnail, &bookmark.URL, &bookmark.CreatedAt, &bookmark.UpdatedAt)
+        if err != nil {
+            return nil, err
+        }
+        bookmarks = append(bookmarks, bookmark)
+    }
+    if err = rows.Err(); err != nil {
+        return nil, err
+    }
+    if len(bookmarks) == 0 {
+        return []models.Bookmark{}, nil
+    }
+    return bookmarks, nil
 }
 
 // NewBookmarkRepository creates a new instance of bookmarkRepository.

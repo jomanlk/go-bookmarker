@@ -27,7 +27,7 @@ func (bc *BookmarksController) GetBookmarks(c *gin.Context) {
 
     // Extract pagination parameters from the request
     pageStr := c.DefaultQuery("page", "1")
-    pageSizeStr := c.DefaultQuery("limit", "10")
+    pageSizeStr := c.DefaultQuery("limit", "50")
 
     // Convert page and limit to integers
     page, err := strconv.Atoi(pageStr)
