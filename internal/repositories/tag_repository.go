@@ -11,7 +11,10 @@ type TagRepository interface {
 	AddTagToBookmark(bookmarkID int, tagID int) error
 	GetTagsForBookmark(bookmarkID int) ([]models.BookmarkTag, error)
 	GetAndCreateTagsIfMissing(tagNames []string) ([]models.Tag, error)
+	GetTagByName(name string) (models.Tag, error)
 	RemoveAllTagsFromBookmark(bookmarkID int) error
+	ListAllTags() ([]models.Tag, error)
+	ListTags(page int, limit int) ([]models.Tag, error)
 }
 
 type tagRepository struct {
@@ -82,6 +85,16 @@ func (r tagRepository) GetTagsForBookmark(bookmarkID int) ([]models.BookmarkTag,
 	}
 
 	return tags, nil
+}
+
+func (r tagRepository) GetTagByName(name string) (models.Tag, error) {
+	query := `SELECT id, name, created_at, updated_at FROM tags WHERE name = ?`
+	var tag models.Tag
+	err := r.db.QueryRow(query, name).Scan(&tag.ID, &tag.Name, &tag.CreatedAt, &tag.UpdatedAt)
+	if err != nil {
+		return models.Tag{}, err
+	}
+	return tag, nil
 }
 
 // GetAndCreateTagsIfMissing accepts a slice of tag names, creates any missing tags, and returns all tag structs for the input names
@@ -157,6 +170,55 @@ func (r tagRepository) RemoveAllTagsFromBookmark(bookmarkID int) error {
 	query := `DELETE FROM bookmarks_tags WHERE bookmark_id = ?`
 	_, err := r.db.Exec(query, bookmarkID)
 	return err
+}
+
+// ListAllTags retrieves all tags from the database (no pagination)
+func (r tagRepository) ListAllTags() ([]models.Tag, error) {
+	query := `SELECT id, name, created_at, updated_at FROM tags`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tags []models.Tag
+	for rows.Next() {
+		var tag models.Tag
+		err := rows.Scan(&tag.ID, &tag.Name, &tag.CreatedAt, &tag.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		tags = append(tags, tag)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return tags, nil
+}
+
+// ListTags retrieves paginated tags from the database
+func (r tagRepository) ListTags(page int, limit int) ([]models.Tag, error) {
+	offset := (page - 1) * limit
+	query := `SELECT id, name, created_at, updated_at FROM tags LIMIT ? OFFSET ?`
+	rows, err := r.db.Query(query, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tags []models.Tag
+	for rows.Next() {
+		var tag models.Tag
+		err := rows.Scan(&tag.ID, &tag.Name, &tag.CreatedAt, &tag.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		tags = append(tags, tag)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return tags, nil
 }
 
 // NewTagRepository creates a new instance of tagRepository.

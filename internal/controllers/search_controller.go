@@ -80,15 +80,14 @@ func (sc *SearchController) GetBookmarksByTag(c *gin.Context) {
 	bookmarkRepo := repositories.NewBookmarkRepository(sc.DB)
 
 	// Find tag by name
-	tags, err := tagRepo.GetAndCreateTagsIfMissing([]string{tagName})
-	if err != nil || len(tags) == 0 {
+	tag, err := tagRepo.GetTagByName(tagName)
+	if err != nil  {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tag not found"})
 		return
 	}
-	tagID := tags[0].ID
 
 	offset := (page - 1) * limit
-	bookmarks, err := bookmarkRepo.ListBookmarksByTag(int(tagID), offset, limit)
+	bookmarks, err := bookmarkRepo.ListBookmarksByTag(int(tag.ID), offset, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bookmarks for tag"})
 		return
