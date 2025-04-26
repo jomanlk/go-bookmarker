@@ -2,10 +2,11 @@ package main
 
 import (
 	"bookmarker/internal/controllers"
+	"bookmarker/internal/dbutil"
 	"bookmarker/internal/server"
-	"database/sql"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
@@ -29,7 +30,7 @@ func setupRouter() *gin.Engine {
 	})
 
 	// Initialize database connection
-	db, err := sql.Open("sqlite3", "../../internal/db/bookmarker_db1.db")
+	db, err := dbutil.OpenSqliteDB("../../internal/db/bookmarker_db1.db")
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -53,7 +54,18 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
-	r := setupRouter()
-	// Listen and Server in 0.0.0.0:8080
-	r.Run(":8080")
+	if len(os.Args) > 2 && os.Args[1] == "import-pinboard" {
+		filename := os.Args[2]
+		importPinboard(filename)
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "start-server" {
+		r := setupRouter()
+		r.Run(":8080")
+		return
+	}
+	if len(os.Args) > 1 {
+		log.Fatalf("Unrecognized command: %s", os.Args[1])
+	}
+	log.Fatalf("No command provided. Use 'start-server' or 'import-pinboard <filename>'")
 }
