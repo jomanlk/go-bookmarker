@@ -46,7 +46,7 @@ func setupRouter() *gin.Engine {
 	r.PATCH("/bookmarks/:id", bookmarksController.UpdateBookmark)
 	// Use SearchController for /search
 	r.GET("/search", searchController.SearchBookmarks)
-	r.GET("/search-by-tag", searchController.GetBookmarksByTag)
+	r.GET("/bookmarks/tag", searchController.GetBookmarksByTag)
 	r.GET("/tags", tagsController.ListTags)
 
 	return r
