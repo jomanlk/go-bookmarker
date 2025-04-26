@@ -16,6 +16,8 @@ type BookmarkService interface {
 	ListBookmarksWithTags(page int, pageSize int) ([]models.Bookmark, error)
 	UpdateBookmark(id int, fields map[string]interface{}) (models.Bookmark, error)
 	UpdateBookmarkWithTags(id int, fields map[string]interface{}, tags []string) (models.Bookmark, error)
+	// SearchBookmarks performs a paginated text search on title, url, or description
+	SearchBookmarks(query string, page int, pageSize int) ([]models.Bookmark, error)
 }
 
 // bookmarkService implementation of the BookmarkService interface.
@@ -185,4 +187,10 @@ func (s *bookmarkService) UpdateBookmarkWithTags(id int, fields map[string]inter
 		return bookmark, err
 	}
 	return bookmark, nil
+}
+
+// SearchBookmarks performs a paginated text search on title, url, or description
+func (s *bookmarkService) SearchBookmarks(query string, page int, pageSize int) ([]models.Bookmark, error) {
+	offset := (page - 1) * pageSize
+	return s.repo.SearchBookmarks(query, offset, pageSize)
 }
