@@ -59,6 +59,12 @@ func main() {
 		importPinboard(filename)
 		return
 	}
+	if len(os.Args) > 3 && os.Args[1] == "create-user" {
+		username := os.Args[2]
+		password := os.Args[3]
+		createUserCommand(username, password)
+		return
+	}
 	if len(os.Args) > 1 && os.Args[1] == "start-server" {
 		r := setupRouter()
 		r.Run(":8080")
@@ -67,5 +73,5 @@ func main() {
 	if len(os.Args) > 1 {
 		log.Fatalf("Unrecognized command: %s", os.Args[1])
 	}
-	log.Fatalf("No command provided. Use 'start-server' or 'import-pinboard <filename>'")
+	log.Fatalf("No command provided. Use 'start-server', 'import-pinboard <filename>', or 'create-user <username> <password>'")
 }
