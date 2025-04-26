@@ -27,4 +27,4 @@ go.work.sum
 .vscode
 
 bookmarker.code-workspace
-internal/db/bookmarker_db1.db
+internal/db/*
