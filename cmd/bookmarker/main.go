@@ -3,7 +3,9 @@ package main
 import (
 	"bookmarker/internal/controllers"
 	"bookmarker/internal/dbutil"
+	"bookmarker/internal/repositories"
 	"bookmarker/internal/server"
+	"bookmarker/internal/services"
 	"log"
 	"net/http"
 	"os"
@@ -35,10 +37,22 @@ func setupRouter() *gin.Engine {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
+	// Initialize repositories
+	userRepo := repositories.NewUserRepository(db)
+	tokenRepo := repositories.NewTokenRepository(db)
+	refreshTokenRepo := repositories.NewRefreshTokenRepository(db)
+
+	// Initialize services
+	userService := services.NewUserService(userRepo)
+	tokenService := services.NewTokenService(tokenRepo)
+	refreshTokenService := services.NewRefreshTokenService(refreshTokenRepo)
+	authService := services.NewAuthService(userService, tokenService, refreshTokenService)
+
 	// Initialize controllers
 	bookmarksController := controllers.NewBookmarksController(db)
 	searchController := controllers.NewSearchController(db)
 	tagsController := controllers.NewTagsController(db)
+	userController := controllers.NewUserController(authService)
 
 	// Define routes
 	r.GET("/bookmarks", bookmarksController.GetBookmarks)
@@ -49,6 +63,10 @@ func setupRouter() *gin.Engine {
 	r.GET("/search", searchController.SearchBookmarks)
 	r.GET("/bookmarks/tag", searchController.GetBookmarksByTag)
 	r.GET("/tags", tagsController.ListTags)
+
+	// Add login and refresh routes
+	r.POST("/login", userController.Login)
+	r.POST("/refresh", userController.Refresh)
 
 	return r
 }
@@ -75,3 +93,4 @@ func main() {
 	}
 	log.Fatalf("No command provided. Use 'start-server', 'import-pinboard <filename>', or 'create-user <username> <password>'")
 }
+

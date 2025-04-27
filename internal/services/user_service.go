@@ -8,23 +8,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService interface {
-	CreateUser(username, password string) (models.User, error)
+type UserService struct {
+	UserRepo *repositories.UserRepository
 }
 
-type userService struct {
-	repo repositories.UserRepository
+func NewUserService(userRepo *repositories.UserRepository) *UserService {
+	return &UserService{UserRepo: userRepo}
 }
 
-func NewUserService(repo repositories.UserRepository) UserService {
-	return &userService{repo: repo}
+func (s *UserService) GetUserByUsername(username string) (models.User, error) {
+	return s.UserRepo.GetUserByUsername(username)
 }
 
-func (s *userService) CreateUser(username, password string) (models.User, error) {
+func (s *UserService) CreateUser(username, password string) (models.User, error) {
 	if username == "" || password == "" {
 		return models.User{}, errors.New("username and password required")
 	}
-	_, err := s.repo.GetUserByUsername(username)
+	_, err := s.UserRepo.GetUserByUsername(username)
 	if err == nil {
 		return models.User{}, errors.New("username already exists")
 	}
@@ -32,5 +32,5 @@ func (s *userService) CreateUser(username, password string) (models.User, error)
 	if err != nil {
 		return models.User{}, err
 	}
-	return s.repo.CreateUser(username, string(hash))
+	return s.UserRepo.CreateUser(username, string(hash))
 }
