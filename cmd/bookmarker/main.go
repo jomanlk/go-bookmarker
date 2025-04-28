@@ -12,8 +12,36 @@ import (
 	"bookmarker/internal/middleware"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+
+func main() {
+	_ = godotenv.Load("../../.env") // Loads .env file if present
+
+	if len(os.Args) > 2 && os.Args[1] == "import-pinboard" {
+		filename := os.Args[2]
+		importPinboard(filename)
+		return
+	}
+	if len(os.Args) > 3 && os.Args[1] == "create-user" {
+		username := os.Args[2]
+		password := os.Args[3]
+		createUserCommand(username, password)
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "start-server" {
+		r := setupRouter()
+		r.Run(":8080")
+		return
+	}
+	if len(os.Args) > 1 {
+		log.Fatalf("Unrecognized command: %s", os.Args[1])
+	}
+	log.Fatalf("No command provided. Use 'start-server', 'import-pinboard <filename>', or 'create-user <username> <password>'")
+}
+
 
 func setupRouter() *gin.Engine {
 	// Disable Console Color
@@ -66,30 +94,7 @@ func setupRouter() *gin.Engine {
 	r.GET("/search", searchController.SearchBookmarks)
 	r.GET("/bookmarks/tag", searchController.GetBookmarksByTag)
 	r.GET("/tags", tagsController.ListTags)
+	r.GET("/me", userController.Me)
 
 	return r
 }
-
-func main() {
-	if len(os.Args) > 2 && os.Args[1] == "import-pinboard" {
-		filename := os.Args[2]
-		importPinboard(filename)
-		return
-	}
-	if len(os.Args) > 3 && os.Args[1] == "create-user" {
-		username := os.Args[2]
-		password := os.Args[3]
-		createUserCommand(username, password)
-		return
-	}
-	if len(os.Args) > 1 && os.Args[1] == "start-server" {
-		r := setupRouter()
-		r.Run(":8080")
-		return
-	}
-	if len(os.Args) > 1 {
-		log.Fatalf("Unrecognized command: %s", os.Args[1])
-	}
-	log.Fatalf("No command provided. Use 'start-server', 'import-pinboard <filename>', or 'create-user <username> <password>'")
-}
-

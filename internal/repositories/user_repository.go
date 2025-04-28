@@ -44,3 +44,13 @@ func (r *UserRepository) GetUserByUsername(username string) (models.User, error)
 	}
 	return user, err
 }
+
+func (r *UserRepository) GetUserByID(id int64) (models.User, error) {
+	row := r.DB.QueryRow(`SELECT id, username, password_hash, created_at, updated_at FROM users WHERE id = ?`, id)
+	var user models.User
+	err := row.Scan(&user.ID, &user.Username, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
+	if (err == sql.ErrNoRows) {
+		return user, errors.New("user not found")
+	}
+	return user, err
+}

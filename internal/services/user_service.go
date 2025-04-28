@@ -20,6 +20,10 @@ func (s *UserService) GetUserByUsername(username string) (models.User, error) {
 	return s.UserRepo.GetUserByUsername(username)
 }
 
+func (s *UserService) GetUserByID(id int64) (models.User, error) {
+	return s.UserRepo.GetUserByID(id)
+}
+
 func (s *UserService) CreateUser(username, password string) (models.User, error) {
 	if username == "" || password == "" {
 		return models.User{}, errors.New("username and password required")

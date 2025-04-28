@@ -12,11 +12,20 @@ import (
 func AuthMiddleware(authService *services.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
-		if header == "" || !strings.HasPrefix(header, "Bearer ") {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing or invalid"})
+		var token string
+		if header != "" && strings.HasPrefix(header, "Bearer ") {
+			token = strings.TrimPrefix(header, "Bearer ")
+		} else {
+			// Try to get token from cookie if Authorization header is missing or invalid
+			cookieToken, err := c.Cookie("access_token")
+			if err == nil && cookieToken != "" {
+				token = cookieToken
+			}
+		}
+		if token == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header or access_token cookie missing or invalid"})
 			return
 		}
-		token := strings.TrimPrefix(header, "Bearer ")
 		userID, err := authService.ValidateAccessToken(token)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
