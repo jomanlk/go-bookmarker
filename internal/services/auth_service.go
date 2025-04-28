@@ -93,6 +93,21 @@ func (a *AuthService) ValidateAccessToken(token string) (int, error) {
 	return int(t.UserID), nil
 }
 
+// Logout deletes both access and refresh tokens for a user
+func (a *AuthService) Logout(accessToken, refreshToken string) error {
+	// Delete access token
+	err1 := a.TokenService.DeleteToken(accessToken)
+	// Delete refresh token
+	err2 := a.RefreshTokenService.DeleteRefreshToken(refreshToken)
+	if err1 != nil {
+		return err1
+	}
+	if err2 != nil {
+		return err2
+	}
+	return nil
+}
+
 // generateRandomToken generates a random string for use as a token
 func generateRandomToken() string {
 	return RandString(48)

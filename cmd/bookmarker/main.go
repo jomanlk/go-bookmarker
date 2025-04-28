@@ -60,6 +60,7 @@ func setupRouter() *gin.Engine {
 	// Public routes
 	r.POST("/login", userController.Login)
 	r.POST("/refresh", userController.Refresh)
+	r.POST("/logout", userController.Logout)
 
 	// Protected routes
 	r.Use(middleware.AuthMiddleware(authService))
