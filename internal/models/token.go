@@ -7,4 +7,5 @@ type Token struct {
 	Token     string `json:"token"`
 	CreatedAt int64  `json:"created_at"`
 	UpdatedAt int64  `json:"updated_at"`
+	ExpiresAt int64  `json:"expires_at"`
 }

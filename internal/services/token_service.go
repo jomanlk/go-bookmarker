@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bookmarker/internal/models"
 	"bookmarker/internal/repositories"
 	"time"
 )
@@ -17,7 +18,7 @@ func (s *TokenService) CreateToken(userID int, token string, expiresAt time.Time
 	return s.TokenRepo.CreateToken(userID, token, expiresAt)
 }
 
-func (s *TokenService) FindByToken(token string) (int, error) {
+func (s *TokenService) FindByToken(token string) (*models.Token, error) {
 	return s.TokenRepo.FindByToken(token)
 }
 

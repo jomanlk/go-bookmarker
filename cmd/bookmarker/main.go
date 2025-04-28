@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 
+	"bookmarker/internal/middleware"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -55,18 +57,19 @@ func setupRouter() *gin.Engine {
 	userController := controllers.NewUserController(authService)
 
 	// Define routes
+	// Public routes
+	r.POST("/login", userController.Login)
+	r.POST("/refresh", userController.Refresh)
+
+	// Protected routes
+	r.Use(middleware.AuthMiddleware(authService))
 	r.GET("/bookmarks", bookmarksController.GetBookmarks)
 	r.POST("/bookmarks", bookmarksController.CreateBookmark)
 	r.GET("/bookmarks/:id", bookmarksController.GetBookmark)
 	r.PATCH("/bookmarks/:id", bookmarksController.UpdateBookmark)
-	// Use SearchController for /search
 	r.GET("/search", searchController.SearchBookmarks)
 	r.GET("/bookmarks/tag", searchController.GetBookmarksByTag)
 	r.GET("/tags", tagsController.ListTags)
-
-	// Add login and refresh routes
-	r.POST("/login", userController.Login)
-	r.POST("/refresh", userController.Refresh)
 
 	return r
 }

@@ -55,9 +55,12 @@ func (a *AuthService) Authenticate(username, password string) (*AuthResult, erro
 
 // RefreshTokens validates a refresh token and issues new tokens
 func (a *AuthService) RefreshTokens(refreshToken string) (*AuthResult, error) {
-	userID, err := a.RefreshTokenService.FindByToken(refreshToken)
+	t, err := a.RefreshTokenService.RefreshTokenRepo.FindByToken(refreshToken)
 	if err != nil {
 		return nil, err
+	}
+	if time.Now().Unix() > t.ExpiresAt {
+		return nil, fmt.Errorf("refresh token expired")
 	}
 	// Invalidate old refresh token
 	err = a.RefreshTokenService.DeleteRefreshToken(refreshToken)
@@ -67,15 +70,27 @@ func (a *AuthService) RefreshTokens(refreshToken string) (*AuthResult, error) {
 	// Issue new tokens
 	accessToken := generateRandomToken()
 	accessExpiresAt := time.Now().Add(30 * time.Minute) // 30 minutes expiry
-	if err := a.TokenService.CreateToken(userID, accessToken, accessExpiresAt); err != nil {
+	if err := a.TokenService.CreateToken(int(t.UserID), accessToken, accessExpiresAt); err != nil {
 		return nil, err
 	}
 	newRefreshToken := generateRandomToken()
 	refreshExpiresAt := time.Now().Add(30 * 24 * time.Hour)
-	if err := a.RefreshTokenService.CreateRefreshToken(userID, newRefreshToken, refreshExpiresAt); err != nil {
+	if err := a.RefreshTokenService.CreateRefreshToken(int(t.UserID), newRefreshToken, refreshExpiresAt); err != nil {
 		return nil, err
 	}
 	return &AuthResult{AccessToken: accessToken, RefreshToken: newRefreshToken}, nil
+}
+
+// ValidateAccessToken checks if the token exists and is not expired, returning the user ID if valid
+func (a *AuthService) ValidateAccessToken(token string) (int, error) {
+	t, err := a.TokenService.TokenRepo.FindByToken(token)
+	if err != nil {
+		return 0, err // token not found or db error
+	}
+	if time.Now().Unix() > t.ExpiresAt {
+		return 0, fmt.Errorf("token expired")
+	}
+	return int(t.UserID), nil
 }
 
 // generateRandomToken generates a random string for use as a token

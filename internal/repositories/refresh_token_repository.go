@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"bookmarker/internal/models"
 	"database/sql"
 	"time"
 )
@@ -18,13 +19,15 @@ func (r *RefreshTokenRepository) CreateRefreshToken(userID int, refreshToken str
 	return err
 }
 
-func (r *RefreshTokenRepository) FindByToken(refreshToken string) (int, error) {
-	var userID int
-	err := r.DB.QueryRow("SELECT user_id FROM refresh_tokens WHERE refresh_token = ? AND expires_at > ?", refreshToken, time.Now().Unix()).Scan(&userID)
+func (r *RefreshTokenRepository) FindByToken(refreshToken string) (*models.RefreshToken, error) {
+	var t models.RefreshToken
+	err := r.DB.QueryRow("SELECT id, user_id, refresh_token, expires_at, created_at, updated_at FROM refresh_tokens WHERE refresh_token = ?", refreshToken).Scan(
+		&t.ID, &t.UserID, &t.RefreshToken, &t.ExpiresAt, &t.CreatedAt, &t.UpdatedAt,
+	)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return userID, nil
+	return &t, nil
 }
 
 func (r *RefreshTokenRepository) DeleteRefreshToken(refreshToken string) error {

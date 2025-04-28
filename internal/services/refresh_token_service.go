@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bookmarker/internal/models"
 	"bookmarker/internal/repositories"
 	"time"
 )
@@ -17,7 +18,7 @@ func (s *RefreshTokenService) CreateRefreshToken(userID int, refreshToken string
 	return s.RefreshTokenRepo.CreateRefreshToken(userID, refreshToken, expiresAt)
 }
 
-func (s *RefreshTokenService) FindByToken(refreshToken string) (int, error) {
+func (s *RefreshTokenService) FindByToken(refreshToken string) (*models.RefreshToken, error) {
 	return s.RefreshTokenRepo.FindByToken(refreshToken)
 }
 
