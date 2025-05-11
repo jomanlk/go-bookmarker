@@ -9,7 +9,7 @@ import (
 )
 
 func createUserCommand(username, password string) {
-	db, err := dbutil.OpenSqliteDB("../../internal/db/bookmarker_db1.db")
+	db, err := dbutil.OpenSqliteDB()
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

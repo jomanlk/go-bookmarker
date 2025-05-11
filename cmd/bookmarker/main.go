@@ -5,11 +5,17 @@ import (
 	"bookmarker/internal/dbutil"
 	"bookmarker/internal/repositories"
 	"bookmarker/internal/services"
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"bookmarker/internal/middleware"
+
+	"database/sql"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -32,8 +38,35 @@ func main() {
 		return
 	}
 	if len(os.Args) > 1 && os.Args[1] == "start-server" {
-		r := setupRouter()
-		r.Run(":8080")
+		db, err := dbutil.OpenSqliteDB()
+		if err != nil {
+			log.Fatalf("Failed to connect to database: %v", err)
+		}
+		r := setupRouter(db)
+
+		// Graceful shutdown setup
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		server := &http.Server{
+			Addr:    ":8080",
+			Handler: r,
+		}
+		go func() {
+			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Fatalf("listen: %s\n", err)
+			}
+		}()
+		<-quit
+		log.Println("Shutting down server...")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			log.Fatalf("Server forced to shutdown: %v", err)
+		}
+		if err := dbutil.ShutdownSqliteDB(db); err != nil {
+			log.Printf("Error closing database: %v", err)
+		}
+		log.Println("Server exiting")
 		return
 	}
 	if len(os.Args) > 1 {
@@ -43,7 +76,7 @@ func main() {
 }
 
 
-func setupRouter() *gin.Engine {
+func setupRouter(db *sql.DB) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
@@ -55,12 +88,6 @@ func setupRouter() *gin.Engine {
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
 	})
-
-	// Initialize database connection
-	db, err := dbutil.OpenSqliteDB("../../internal/db/bookmarker_db1.db")
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
 
 	// Initialize repositories
 	userRepo := repositories.NewUserRepository(db)
