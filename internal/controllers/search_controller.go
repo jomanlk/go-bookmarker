@@ -3,19 +3,19 @@ package controllers
 import (
 	"bookmarker/internal/repositories"
 	"bookmarker/internal/services"
-	"database/sql"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type SearchController struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
-func NewSearchController(db *sql.DB) *SearchController {
+func NewSearchController(db *pgxpool.Pool) *SearchController {
 	return &SearchController{DB: db}
 }
 
