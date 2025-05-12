@@ -15,9 +15,8 @@ import (
 
 	"bookmarker/internal/middleware"
 
-	"database/sql"
-
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -38,7 +37,7 @@ func main() {
 		return
 	}
 	if len(os.Args) > 1 && os.Args[1] == "start-server" {
-		db, err := dbutil.OpenSqliteDB()
+		db, err := dbutil.OpenPostgresDB()
 		if err != nil {
 			log.Fatalf("Failed to connect to database: %v", err)
 		}
@@ -63,7 +62,7 @@ func main() {
 		if err := server.Shutdown(ctx); err != nil {
 			log.Fatalf("Server forced to shutdown: %v", err)
 		}
-		if err := dbutil.ShutdownSqliteDB(db); err != nil {
+		if err := dbutil.ShutdownPostgresDB(db); err != nil {
 			log.Printf("Error closing database: %v", err)
 		}
 		log.Println("Server exiting")
@@ -76,7 +75,7 @@ func main() {
 }
 
 
-func setupRouter(db *sql.DB) *gin.Engine {
+func setupRouter(db *pgxpool.Pool) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()

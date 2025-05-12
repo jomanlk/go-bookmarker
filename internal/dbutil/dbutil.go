@@ -1,27 +1,36 @@
 package dbutil
 
 import (
-	"database/sql"
+	"context"
+	"errors"
+	"fmt"
+	"os"
 
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// OpenSqliteDB opens a SQLite database with WAL mode and busy timeout for concurrency.
-func OpenSqliteDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "file:../../internal/db/bookmarker_db1.db?_journal_mode=WAL&_busy_timeout=5000&_sync=NORMAL")
+// OpenPostgresDB opens a PostgreSQL database using pgx and a connection string from the environment.
+func OpenPostgresDB() (*pgxpool.Pool, error) {
+	user := os.Getenv("DB_USER")
+	pass := os.Getenv("DB_PASS")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	dbname := os.Getenv("DB_NAME")
+	if user == "" || pass == "" || host == "" || port == "" || dbname == "" {
+		return nil, errors.New("database environment variables not set")
+	}
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require", user, pass, host, port, dbname)
+	pool, err := pgxpool.New(context.Background(), connStr)
 	if err != nil {
 		return nil, err
 	}
-	// Set WAL mode for better concurrency
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(5)
-	return db, nil
+	return pool, nil
 }
 
-// ShutdownSqliteDB cleanly closes the SQLite database connection.
-func ShutdownSqliteDB(db *sql.DB) error {
-	if db != nil {
-		return db.Close()
+// ShutdownPostgresDB cleanly closes the PostgreSQL database connection.
+func ShutdownPostgresDB(pool *pgxpool.Pool) error {
+	if pool != nil {
+		pool.Close()
 	}
 	return nil
 }

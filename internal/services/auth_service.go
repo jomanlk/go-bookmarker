@@ -59,7 +59,7 @@ func (a *AuthService) RefreshTokens(refreshToken string) (*AuthResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	if time.Now().Unix() > t.ExpiresAt {
+	if time.Now().After(t.ExpiresAt) {
 		return nil, fmt.Errorf("refresh token expired")
 	}
 	// Invalidate old refresh token
@@ -87,7 +87,7 @@ func (a *AuthService) ValidateAccessToken(token string) (int, error) {
 	if err != nil {
 		return 0, err // token not found or db error
 	}
-	if time.Now().Unix() > t.ExpiresAt {
+	if time.Now().After(t.ExpiresAt) {
 		return 0, fmt.Errorf("token expired")
 	}
 	return int(t.UserID), nil

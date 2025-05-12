@@ -2,8 +2,12 @@ package repositories
 
 import (
 	"bookmarker/internal/models"
-	"database/sql"
+	"context"
+	"strconv"
+	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type TagRepository interface {
@@ -18,40 +22,36 @@ type TagRepository interface {
 }
 
 type tagRepository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // CreateTag adds a new tag to the database.
 func (r tagRepository) CreateTag(name string) (models.Tag, error) {
-	ts := time.Now().Unix()
-	query := `INSERT INTO tags (name, created_at, updated_at) VALUES (?, ?, ?)`
-
-	result, err := r.db.Exec(query, name, ts, ts)
-	if (err != nil) {
+	ts := time.Now().UTC()
+	var tagID int64
+	err := r.db.QueryRow(context.Background(),
+		`INSERT INTO tags (name, created_at, updated_at) VALUES ($1, $2, $3) RETURNING id`,
+		name, ts, ts,
+	).Scan(&tagID)
+	if err != nil {
 		return models.Tag{}, err
 	}
-
-	tagID, err := result.LastInsertId()
-	if (err != nil) {
-		return models.Tag{}, err
-	}
-
-	// Fetch the created tag with timestamps
 	var tag models.Tag
-	tagQuery := `SELECT id, name, created_at, updated_at FROM tags WHERE id = ?`
-	err = r.db.QueryRow(tagQuery, tagID).Scan(&tag.ID, &tag.Name, &tag.CreatedAt, &tag.UpdatedAt)
-	if (err != nil) {
+	err = r.db.QueryRow(context.Background(),
+		`SELECT id, name, created_at, updated_at FROM tags WHERE id = $1`, tagID,
+	).Scan(&tag.ID, &tag.Name, &tag.CreatedAt, &tag.UpdatedAt)
+	if err != nil {
 		return models.Tag{}, err
 	}
-
 	return tag, nil
 }
 
 // AddTagToBookmark associates a tag with a bookmark.
 func (r tagRepository) AddTagToBookmark(bookmarkID int, tagID int) error {
-	query := `INSERT INTO bookmarks_tags (bookmark_id, tag_id, created_at) VALUES (?, ?, CURRENT_TIMESTAMP)`
-
-	_, err := r.db.Exec(query, bookmarkID, tagID)
+	_, err := r.db.Exec(context.Background(),
+		`INSERT INTO bookmarks_tags (bookmark_id, tag_id, created_at) VALUES ($1, $2, NOW())`,
+		bookmarkID, tagID,
+	)
 	return err
 }
 
@@ -61,15 +61,13 @@ func (r tagRepository) GetTagsForBookmark(bookmarkID int) ([]models.BookmarkTag,
 		SELECT t.id, t.name
 		FROM tags t
 		INNER JOIN bookmarks_tags bt ON t.id = bt.tag_id
-		WHERE bt.bookmark_id = ?
+		WHERE bt.bookmark_id = $1
 	`
-
-	rows, err := r.db.Query(query, bookmarkID)
+	rows, err := r.db.Query(context.Background(), query, bookmarkID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 	var tags []models.BookmarkTag
 	for rows.Next() {
 		var tag models.BookmarkTag
@@ -79,18 +77,17 @@ func (r tagRepository) GetTagsForBookmark(bookmarkID int) ([]models.BookmarkTag,
 		}
 		tags = append(tags, tag)
 	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
-
 	return tags, nil
 }
 
 func (r tagRepository) GetTagByName(name string) (models.Tag, error) {
-	query := `SELECT id, name, created_at, updated_at FROM tags WHERE name = ?`
 	var tag models.Tag
-	err := r.db.QueryRow(query, name).Scan(&tag.ID, &tag.Name, &tag.CreatedAt, &tag.UpdatedAt)
+	err := r.db.QueryRow(context.Background(),
+		`SELECT id, name, created_at, updated_at FROM tags WHERE name = $1`, name,
+	).Scan(&tag.ID, &tag.Name, &tag.CreatedAt, &tag.UpdatedAt)
 	if err != nil {
 		return models.Tag{}, err
 	}
@@ -102,24 +99,19 @@ func (r tagRepository) GetAndCreateTagsIfMissing(tagNames []string) ([]models.Ta
 	if len(tagNames) == 0 {
 		return nil, nil
 	}
-
 	// 1. Find which tags already exist
-	query, args := "SELECT id, name, created_at, updated_at FROM tags WHERE name IN (", []interface{}{}
+	placeholders := make([]string, len(tagNames))
+	args := make([]interface{}, len(tagNames))
 	for i, name := range tagNames {
-		if i > 0 {
-			query += ","
-		}
-		query += "?"
-		args = append(args, name)
+		placeholders[i] = "$" + strconv.Itoa(i+1)
+		args[i] = name
 	}
-	query += ")"
-
-	rows, err := r.db.Query(query, args...)
+	query := `SELECT id, name, created_at, updated_at FROM tags WHERE name IN (` + strings.Join(placeholders, ",") + `)`
+	rows, err := r.db.Query(context.Background(), query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 	existingTags := make(map[string]models.Tag)
 	for rows.Next() {
 		var tag models.Tag
@@ -129,30 +121,24 @@ func (r tagRepository) GetAndCreateTagsIfMissing(tagNames []string) ([]models.Ta
 		}
 		existingTags[tag.Name] = tag
 	}
-
-	// 2. Find missing tags
 	missing := []string{}
 	for _, name := range tagNames {
 		if _, found := existingTags[name]; !found {
 			missing = append(missing, name)
 		}
 	}
-
-	// 3. Create missing tags
 	for _, name := range missing {
 		_, err := r.CreateTag(name)
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	// 4. Query again to get all tag structs for input names
-	rows2, err := r.db.Query(query, args...)
+	// Query again to get all tag structs for input names
+	rows2, err := r.db.Query(context.Background(), query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows2.Close()
-
 	var tags []models.Tag
 	for rows2.Next() {
 		var tag models.Tag
@@ -167,20 +153,17 @@ func (r tagRepository) GetAndCreateTagsIfMissing(tagNames []string) ([]models.Ta
 
 // RemoveAllTagsFromBookmark removes all tags associated with a bookmark.
 func (r tagRepository) RemoveAllTagsFromBookmark(bookmarkID int) error {
-	query := `DELETE FROM bookmarks_tags WHERE bookmark_id = ?`
-	_, err := r.db.Exec(query, bookmarkID)
+	_, err := r.db.Exec(context.Background(), `DELETE FROM bookmarks_tags WHERE bookmark_id = $1`, bookmarkID)
 	return err
 }
 
 // ListAllTags retrieves all tags from the database (no pagination)
 func (r tagRepository) ListAllTags() ([]models.Tag, error) {
-	query := `SELECT id, name, created_at, updated_at FROM tags`
-	rows, err := r.db.Query(query)
+	rows, err := r.db.Query(context.Background(), `SELECT id, name, created_at, updated_at FROM tags`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 	var tags []models.Tag
 	for rows.Next() {
 		var tag models.Tag
@@ -190,8 +173,8 @@ func (r tagRepository) ListAllTags() ([]models.Tag, error) {
 		}
 		tags = append(tags, tag)
 	}
-	if err = rows.Err(); err != nil {
-		return nil, err
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	return tags, nil
 }
@@ -199,13 +182,11 @@ func (r tagRepository) ListAllTags() ([]models.Tag, error) {
 // ListTags retrieves paginated tags from the database
 func (r tagRepository) ListTags(page int, limit int) ([]models.Tag, error) {
 	offset := (page - 1) * limit
-	query := `SELECT id, name, created_at, updated_at FROM tags LIMIT ? OFFSET ?`
-	rows, err := r.db.Query(query, limit, offset)
+	rows, err := r.db.Query(context.Background(), `SELECT id, name, created_at, updated_at FROM tags LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 	var tags []models.Tag
 	for rows.Next() {
 		var tag models.Tag
@@ -215,13 +196,13 @@ func (r tagRepository) ListTags(page int, limit int) ([]models.Tag, error) {
 		}
 		tags = append(tags, tag)
 	}
-	if err = rows.Err(); err != nil {
-		return nil, err
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	return tags, nil
 }
 
 // NewTagRepository creates a new instance of tagRepository.
-func NewTagRepository(db *sql.DB) TagRepository {
+func NewTagRepository(db *pgxpool.Pool) TagRepository {
 	return &tagRepository{db: db}
 }

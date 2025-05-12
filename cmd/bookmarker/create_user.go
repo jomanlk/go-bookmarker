@@ -9,7 +9,7 @@ import (
 )
 
 func createUserCommand(username, password string) {
-	db, err := dbutil.OpenSqliteDB()
+	db, err := dbutil.OpenPostgresDB()
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

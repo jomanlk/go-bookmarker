@@ -2,19 +2,19 @@ package controllers
 
 import (
 	"bookmarker/internal/repositories"
-	"database/sql"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type TagsController struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
-func NewTagsController(db *sql.DB) *TagsController {
+func NewTagsController(db *pgxpool.Pool) *TagsController {
 	return &TagsController{DB: db}
 }
 

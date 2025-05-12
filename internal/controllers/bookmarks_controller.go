@@ -3,19 +3,19 @@ package controllers
 import (
 	"bookmarker/internal/repositories"
 	"bookmarker/internal/services"
-	"database/sql"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type BookmarksController struct {
-    DB *sql.DB
+    DB *pgxpool.Pool
 }
 
-func NewBookmarksController(db *sql.DB) *BookmarksController {
+func NewBookmarksController(db *pgxpool.Pool) *BookmarksController {
     return &BookmarksController{DB: db}
 }
 
