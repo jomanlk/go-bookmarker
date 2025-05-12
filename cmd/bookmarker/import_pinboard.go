@@ -12,7 +12,7 @@ import (
 
 // importPinboard runs the import-pinboard command
 func importPinboard(filename string) {
-	db, err := dbutil.OpenSqliteDB()
+	db, err := dbutil.OpenPostgresDB()
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

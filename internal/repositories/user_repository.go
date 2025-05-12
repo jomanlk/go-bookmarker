@@ -2,27 +2,31 @@ package repositories
 
 import (
 	"bookmarker/internal/models"
-	"database/sql"
+	"context"
 	"errors"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // UserRepository handles user-related DB operations
+// Now uses pgxpool.Pool
+//
 type UserRepository struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
+func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 	return &UserRepository{DB: db}
 }
 
 func (r *UserRepository) CreateUser(username, passwordHash string) (models.User, error) {
-	createdAt := time.Now().Unix()
-	result, err := r.DB.Exec(`INSERT INTO users (username, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?)`, username, passwordHash, createdAt, createdAt)
-	if err != nil {
-		return models.User{}, err
-	}
-	id, err := result.LastInsertId()
+	createdAt := time.Now().UTC()
+	var id int64
+	err := r.DB.QueryRow(context.Background(),
+		`INSERT INTO users (username, password_hash, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id`,
+		username, passwordHash, createdAt, createdAt,
+	).Scan(&id)
 	if err != nil {
 		return models.User{}, err
 	}
@@ -36,21 +40,27 @@ func (r *UserRepository) CreateUser(username, passwordHash string) (models.User,
 }
 
 func (r *UserRepository) GetUserByUsername(username string) (models.User, error) {
-	row := r.DB.QueryRow(`SELECT id, username, password_hash, created_at, updated_at FROM users WHERE username = ?`, username)
+	row := r.DB.QueryRow(context.Background(),
+		`SELECT id, username, password_hash, created_at, updated_at FROM users WHERE username = $1`, username)
 	var user models.User
 	err := row.Scan(&user.ID, &user.Username, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
-	if err == sql.ErrNoRows {
-		return user, errors.New("user not found")
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return user, errors.New("user not found")
+		}
 	}
 	return user, err
 }
 
 func (r *UserRepository) GetUserByID(id int64) (models.User, error) {
-	row := r.DB.QueryRow(`SELECT id, username, password_hash, created_at, updated_at FROM users WHERE id = ?`, id)
+	row := r.DB.QueryRow(context.Background(),
+		`SELECT id, username, password_hash, created_at, updated_at FROM users WHERE id = $1`, id)
 	var user models.User
 	err := row.Scan(&user.ID, &user.Username, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
-	if (err == sql.ErrNoRows) {
-		return user, errors.New("user not found")
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return user, errors.New("user not found")
+		}
 	}
 	return user, err
 }

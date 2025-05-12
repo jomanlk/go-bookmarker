@@ -18,11 +18,11 @@ type PinboardBookmark struct {
 }
 
 var placeholderThumbnails = []string{
-	"https://1drv.ms/i/c/f2b9998cb2784732/IQTMsvabZ4tmSr-bD1f2Kfw4AfXistrI6TilBEGdDcbGN7w??width=660",
-	"https://1drv.ms/i/c/f2b9998cb2784732/IQQcpBLxCcY_T64O2aoDxfRXAT5xp_c81LQaAe0qGnzk0Q4?width=660",
-	"https://1drv.ms/i/c/f2b9998cb2784732/IQRZZxzdGVxLRLoFxNHn1yEbAar3TrdRUYIwApp7VfAWBk8?width=660",
-	"https://1drv.ms/i/c/f2b9998cb2784732/IQQmzNd7DL0pQ4TATzp2h0yMASFnZMcUFXdLc_7U-oJEZQk?width=660",
-	"https://1drv.ms/i/c/f2b9998cb2784732/IQR1lj5F4m37RJ9q_yC8b4_cAT3KdgW1D4Wjlmj6ZYB5MeM?width=660",
+	"/src/assets/site1.png",
+	"/src/assets/site2.png",
+	"/src/assets/site3.png",
+	"/src/assets/site4.png",
+	"/src/assets/site5.png",
 }
 
 // PinboardImportService imports bookmarks from a Pinboard JSON export
@@ -79,12 +79,4 @@ func parseTags(tags string) []string {
 func randomThumbnail() string {
 	rand.Seed(time.Now().UnixNano())
 	return placeholderThumbnails[rand.Intn(len(placeholderThumbnails))]
-}
-
-func parsePinboardTime(ts string) (int64, error) {
-	t, err := time.Parse(time.RFC3339, ts)
-	if err != nil {
-		return 0, err
-	}
-	return t.Unix(), nil
 }
