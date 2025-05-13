@@ -155,7 +155,7 @@ func setTokenCookie(c *gin.Context, name, value string, isRefreshToken bool) {
 		MaxAge:   maxAge,
 		Secure:   secure,
 		HttpOnly: httpOnly,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 	}
 	http.SetCookie(c.Writer, &header)
 }
