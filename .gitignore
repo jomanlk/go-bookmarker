@@ -28,3 +28,5 @@ go.work.sum
 
 bookmarker.code-workspace
 internal/db/*
+tests/Bruno/Bookmarker/collection.bru
+tests/Bruno/Bookmarker/environments/Bookmarker.bru
