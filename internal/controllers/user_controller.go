@@ -37,12 +37,8 @@ func (uc *UserController) Login(c *gin.Context) {
 		return
 	}
 	// Set access and refresh tokens as HTTP-only cookies
-	cookieMaxAge := 60 * 30 // 30 minutes for access token
-	refreshCookieMaxAge := 60 * 60 * 24 * 30 // 30 days for refresh token
-	domain := "" // set to your domain if needed
-	secure := false // set to true if using HTTPS
-	c.SetCookie("access_token", result.AccessToken, cookieMaxAge, "/", domain, secure, true)
-	c.SetCookie("refresh_token", result.RefreshToken, refreshCookieMaxAge, "/", domain, secure, true)
+	setTokenCookie(c, "access_token", result.AccessToken, false)
+	setTokenCookie(c, "refresh_token", result.RefreshToken, true)
 	c.JSON(http.StatusOK, UserLoginResponse{AccessToken: result.AccessToken, RefreshToken: result.RefreshToken})
 }
 
@@ -73,12 +69,8 @@ func (uc *UserController) Refresh(c *gin.Context) {
 		return
 	}
 	// Set new tokens as HTTP-only cookies
-	cookieMaxAge := 60 * 30 // 30 minutes for access token
-	refreshCookieMaxAge := 60 * 60 * 24 * 30 // 30 days for refresh token
-	domain := "" // set to your domain if needed
-	secure := false // set to true if using HTTPS
-	c.SetCookie("access_token", result.AccessToken, cookieMaxAge, "/", domain, secure, true)
-	c.SetCookie("refresh_token", result.RefreshToken, refreshCookieMaxAge, "/", domain, secure, true)
+	setTokenCookie(c, "access_token", result.AccessToken, false)
+	setTokenCookie(c, "refresh_token", result.RefreshToken, true)
 	c.JSON(http.StatusOK, UserLoginResponse{AccessToken: result.AccessToken, RefreshToken: result.RefreshToken})
 }
 
@@ -114,10 +106,8 @@ func (uc *UserController) Logout(c *gin.Context) {
 		return
 	}
 	// Remove the cookies by setting MaxAge to -1
-	domain := "" // set to your domain if needed
-	secure := false // set to true if using HTTPS
-	c.SetCookie("access_token", "", -1, "/", domain, secure, true)
-	c.SetCookie("refresh_token", "", -1, "/", domain, secure, true)
+	setTokenCookie(c, "access_token", "", false)
+	setTokenCookie(c, "refresh_token", "", true)
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
@@ -141,4 +131,31 @@ func (uc *UserController) Me(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
         "user": user,
     })
+}
+
+func setTokenCookie(c *gin.Context, name, value string, isRefreshToken bool) {
+	var maxAge int
+	if isRefreshToken {
+		maxAge = 60 * 60 * 24 * 30 // 30 days for refresh token
+	} else {
+		maxAge = 60 * 30 // 30 minutes for access token
+	}
+	domain := "" // set to your domain if needed
+	path := "/"
+	httpOnly := true
+	secure := true
+	if appEnv := c.GetString("APP_ENV"); appEnv == "dev" {
+		secure = false
+	}// set to true if using HTTPS
+	header := http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     path,
+		Domain:   domain,
+		MaxAge:   maxAge,
+		Secure:   secure,
+		HttpOnly: httpOnly,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(c.Writer, &header)
 }
