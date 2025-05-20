@@ -30,3 +30,4 @@ bookmarker.code-workspace
 internal/db/*
 tests/Bruno/Bookmarker/environments/Bookmarker.bru
 tests/Bruno/Bookmarker/collection.bru
+git-filter-repo
