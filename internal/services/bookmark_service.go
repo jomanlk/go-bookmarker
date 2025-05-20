@@ -3,12 +3,13 @@ package services
 import (
 	"bookmarker/internal/models"
 	"bookmarker/internal/repositories"
+	"time"
 )
 
 // BookmarkService defines the service layer interface.
 type BookmarkService interface {
 	CreateBookmark(url, title, description, thumbnail string) (models.Bookmark, error)
-	CreateBookmarkWithTags(url, title, description, thumbnail string, tags []string) (models.Bookmark, error)
+	CreateBookmarkWithTags(url, title, description, thumbnail string, tags []string, createdAt time.Time) (models.Bookmark, error)
 	GetBookmarkByID(id int) (models.Bookmark, error)
 	GetBookmarkWithTags(id int) (models.Bookmark, error)
 	ListBookmarks(page int, pageSize int) ([]models.Bookmark, error)
@@ -43,11 +44,11 @@ func NewBookmarkServiceWithTags(repo repositories.BookmarkRepository, tagRepo re
 
 // CreateBookmark passes the bookmark to the repository for creation.
 func (s *bookmarkService) CreateBookmark(url, title, description, thumbnail string) (models.Bookmark, error) {
-	return s.repo.CreateBookmark(url, title, description, thumbnail)
+	return s.repo.CreateBookmark(url, title, description, thumbnail, time.Now())
 }
 
 // CreateBookmarkWithTags creates a bookmark and associates tags.
-func (s *bookmarkService) CreateBookmarkWithTags(url, title, description, thumbnail string, tags []string) (models.Bookmark, error) {
+func (s *bookmarkService) CreateBookmarkWithTags(url, title, description, thumbnail string, tags []string, createdAt time.Time) (models.Bookmark, error) {
 	// Deduplicate tags
 	tagSet := make(map[string]struct{})
 	for _, tag := range tags {
@@ -59,7 +60,7 @@ func (s *bookmarkService) CreateBookmarkWithTags(url, title, description, thumbn
 	}
 
 	// Create the bookmark
-	bookmark, err := s.repo.CreateBookmark(url, title, description, thumbnail)
+	bookmark, err := s.repo.CreateBookmark(url, title, description, thumbnail, createdAt)
 	if err != nil {
 		return bookmark, err
 	}

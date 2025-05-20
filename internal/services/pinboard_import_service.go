@@ -50,13 +50,25 @@ func (s *PinboardImportService) ImportFromJSON(r io.Reader) error {
 		tags := parseTags(pb.Tags)
 		thumbnail := randomThumbnail()
 		description := pb.Extended
-		
+
+		// Parse the time field
+		var createdAt time.Time
+		if pb.Time != "" {
+			createdAt, err = time.Parse(time.RFC3339, pb.Time)
+			if err != nil {
+				return err
+			}
+		} else {
+			createdAt = time.Now()
+		}
+
 		_, err = s.BookmarkService.CreateBookmarkWithTags(
 			pb.Href,
 			pb.Description,
 			description,
 			thumbnail,
 			tags,
+			createdAt,
 		)
 		if err != nil {
 			return err
