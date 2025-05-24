@@ -18,11 +18,11 @@ type PinboardBookmark struct {
 }
 
 var placeholderThumbnails = []string{
-	"/src/assets/site1.png",
-	"/src/assets/site2.png",
-	"/src/assets/site3.png",
-	"/src/assets/site4.png",
-	"/src/assets/site5.png",
+	"/placeholders/site1.png",
+	"/placeholders/site2.png",
+	"/placeholders/site3.png",
+	"/placeholders/site4.png",
+	"/placeholders/site5.png",
 }
 
 // PinboardImportService imports bookmarks from a Pinboard JSON export
