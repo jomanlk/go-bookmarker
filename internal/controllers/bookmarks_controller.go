@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -75,7 +76,7 @@ func (bc *BookmarksController) CreateBookmark(c *gin.Context) {
     bookmarkService := services.NewBookmarkServiceWithTags(bookmarkRepo, tagRepo)
 
     // Create the bookmark with tags
-    bookmark, err := bookmarkService.CreateBookmarkWithTags(input.URL, input.Title, input.Description, input.Thumbnail, input.Tags)
+    bookmark, err := bookmarkService.CreateBookmarkWithTags(input.URL, input.Title, input.Description, input.Thumbnail, input.Tags, time.Now())
     if err != nil {
         log.Printf("Failed to create bookmark: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create bookmark"})

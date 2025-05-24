@@ -11,7 +11,7 @@ import (
 
 // BookmarkRepository defines the interface for handling bookmarks with pagination support.
 type BookmarkRepository interface {
-	CreateBookmark(url, title, description, thumbnail string) (models.Bookmark, error)
+	CreateBookmark(url, title, description, thumbnail string, createdAt time.Time) (models.Bookmark, error)
 	GetBookmarkByID(id int) (models.Bookmark, error)
 	ListBookmarks(offset int, limit int) ([]models.Bookmark, error)
 	ListBookmarksByTag(tagID int, offset int, limit int) ([]models.Bookmark, error)
@@ -25,8 +25,7 @@ type bookmarkRepository struct {
 }
 
 // CreateBookmark adds a new bookmark to the database.
-func (r bookmarkRepository) CreateBookmark(url, title, description, thumbnail string) (models.Bookmark, error) {
-	createdAt := time.Now().UTC()
+func (r bookmarkRepository) CreateBookmark(url, title, description, thumbnail string, createdAt time.Time) (models.Bookmark, error) {
 	var bookmarkID int64
 	err := r.db.QueryRow(context.Background(),
 		`INSERT INTO bookmarks (url, title, description, thumbnail, created_at, updated_at)
