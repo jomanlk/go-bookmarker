@@ -1,0 +1,17 @@
+meta {
+  name: Set Webhook
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{TG_HOST}}/bot{{TG_TOKEN}}/setWebhook
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+     "url": ""
+  }
+}

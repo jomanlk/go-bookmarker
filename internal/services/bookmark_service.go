@@ -76,6 +76,16 @@ func (s *bookmarkService) CreateBookmarkWithTags(url, title, description, thumbn
 			return bookmark, err
 		}
 	}
+
+	// Fetch and set the tags for the bookmark so that bookmark.Tags is not null
+	bookmark.Tags = make([]models.BookmarkTag, 0, len(tagStructs))
+	for _, tag := range tagStructs {
+		bookmark.Tags = append(bookmark.Tags, models.BookmarkTag{
+			ID:   tag.ID,
+			Name: tag.Name,
+		})
+	}
+
 	return bookmark, nil
 }
 

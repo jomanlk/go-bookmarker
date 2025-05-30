@@ -32,7 +32,7 @@ func (uc *UserController) Login(c *gin.Context) {
 		return
 	}
 	result, err := uc.AuthService.Authenticate(req.Username, req.Password)
-	if err != nil {
+	if err != nil || result == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
