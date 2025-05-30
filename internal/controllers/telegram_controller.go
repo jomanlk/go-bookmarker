@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"bookmarker/internal/models"
 	"bookmarker/internal/repositories"
 	"bookmarker/internal/services"
 	"encoding/json"
@@ -37,7 +38,7 @@ func (tc *TelegramController) TelegramWebhookHandler(c *gin.Context) {
 	}
 
 	// Extract URL and tags from message
-	url, tags, text, found := extractURLAndTagsFromMessage(update)
+	url, tags, _, found := extractURLAndTagsFromMessage(update)
 	if !found {
 		c.JSON(http.StatusOK, gin.H{"status": "no valid url detected"})
 		return
@@ -59,7 +60,7 @@ func (tc *TelegramController) TelegramWebhookHandler(c *gin.Context) {
 	// Extract chat ID
 	chatID := extractChatID(update)
 	if chatID != 0 {
-		sendTelegramConfirmation(chatID, bookmark)
+		sendTelegramConfirmation(chatID, &bookmark)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -133,7 +134,7 @@ func extractChatID(update map[string]interface{}) int64 {
 }
 
 // sendTelegramConfirmation sends a confirmation message to the user via Telegram
-func sendTelegramConfirmation(chatID int64, bookmark *services.BookmarkWithTags) {
+func sendTelegramConfirmation(chatID int64, bookmark *models.Bookmark) {
 	telegramClient := services.NewTelegramApiClient()
 	msg := "URL: " + bookmark.URL
 	if len(bookmark.Tags) > 0 {
