@@ -104,12 +104,15 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 	searchController := controllers.NewSearchController(db)
 	tagsController := controllers.NewTagsController(db)
 	userController := controllers.NewUserController(authService)
+	telegramController := controllers.NewTelegramController(db)
 
 	// Define routes
 	// Public routes
 	r.POST("/login", userController.Login)
 	r.POST("/refresh", userController.Refresh)
 	r.POST("/logout", userController.Logout)
+	// Telegram webhook route
+	r.POST("/telegram/listen", telegramController.TelegramWebhookHandler)
 
 	// Protected routes
 	r.Use(middleware.AuthMiddleware(authService))
