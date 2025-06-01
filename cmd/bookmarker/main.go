@@ -105,6 +105,7 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 	tagsController := controllers.NewTagsController(db)
 	userController := controllers.NewUserController(authService)
 	telegramController := controllers.NewTelegramController(db)
+	urlController := controllers.NewUrlController()
 
 	// Define routes
 	// Public routes
@@ -124,6 +125,7 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 	r.GET("/bookmarks/tag", searchController.GetBookmarksByTag)
 	r.GET("/tags", tagsController.ListTags)
 	r.GET("/me", userController.Me)
+	r.GET("/url/preview", urlController.UrlPreviewHandler)
 
 	return r
 }
