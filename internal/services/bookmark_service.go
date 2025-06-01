@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bookmarker/internal/clients"
 	"bookmarker/internal/models"
 	"bookmarker/internal/repositories"
 	"time"
@@ -8,7 +9,6 @@ import (
 
 // BookmarkService defines the service layer interface.
 type BookmarkService interface {
-	CreateBookmark(url, title, description, thumbnail string) (models.Bookmark, error)
 	CreateBookmarkWithTags(url, title, description, thumbnail string, tags []string, createdAt time.Time) (models.Bookmark, error)
 	GetBookmarkByID(id int) (models.Bookmark, error)
 	GetBookmarkWithTags(id int) (models.Bookmark, error)
@@ -42,13 +42,10 @@ func NewBookmarkServiceWithTags(repo repositories.BookmarkRepository, tagRepo re
 	}
 }
 
-// CreateBookmark passes the bookmark to the repository for creation.
-func (s *bookmarkService) CreateBookmark(url, title, description, thumbnail string) (models.Bookmark, error) {
-	return s.repo.CreateBookmark(url, title, description, thumbnail, time.Now())
-}
-
+ 
 // CreateBookmarkWithTags creates a bookmark and associates tags.
 func (s *bookmarkService) CreateBookmarkWithTags(url, title, description, thumbnail string, tags []string, createdAt time.Time) (models.Bookmark, error) {
+
 	// Deduplicate tags
 	tagSet := make(map[string]struct{})
 	for _, tag := range tags {
@@ -57,6 +54,36 @@ func (s *bookmarkService) CreateBookmarkWithTags(url, title, description, thumbn
 	uniqueTags := make([]string, 0, len(tagSet))
 	for tag := range tagSet {
 		uniqueTags = append(uniqueTags, tag)
+	}
+
+	// Fetch URL preview if needed
+	usePreview := title == "" || description == "" || thumbnail == ""
+	var previewTitle, previewDescription, previewImage string
+	if usePreview {
+		previewClient := clients.NewURLPreviewApiClient()
+		preview, err := previewClient.Fetch(url)
+		if err == nil && preview != nil {
+			previewTitle = preview.Title
+			previewDescription = preview.Description
+			previewImage = preview.Image
+		}
+	}
+
+	if title == "" {
+		if previewTitle != "" {
+			title = previewTitle
+		} else {
+			title = url
+		}
+	}
+	if description == "" && previewDescription != "" {
+		description = previewDescription
+	}
+	if thumbnail == "" && previewImage != "" {
+		thumbnail = previewImage
+	}
+	if thumbnail == "" {
+		thumbnail = "/placeholders/site5.png"
 	}
 
 	// Create the bookmark
@@ -165,7 +192,6 @@ func (s *bookmarkService) UpdateBookmarkWithTags(id int, fields map[string]inter
 	for tag := range tagSet {
 		uniqueTags = append(uniqueTags, tag)
 	}
-
 	// Get or create tags
 	tagStructs, err := s.tagRepo.GetAndCreateTagsIfMissing(uniqueTags)
 	if err != nil {

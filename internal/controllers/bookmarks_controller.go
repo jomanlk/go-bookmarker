@@ -70,11 +70,6 @@ func (bc *BookmarksController) CreateBookmark(c *gin.Context) {
         return
     }
 
-    // Set default thumbnail if not provided
-    if input.Thumbnail == "" {
-        input.Thumbnail = "/placeholders/site5.png"
-    }
-
     // Initialize the repositories and service
     bookmarkRepo := repositories.NewBookmarkRepository(bc.DB)
     tagRepo := repositories.NewTagRepository(bc.DB)

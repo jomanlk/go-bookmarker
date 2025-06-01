@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"bookmarker/internal/clients"
 	"bookmarker/internal/models"
 	"bookmarker/internal/repositories"
 	"bookmarker/internal/services"
@@ -135,7 +136,7 @@ func extractChatID(update map[string]interface{}) int64 {
 
 // sendTelegramConfirmation sends a confirmation message to the user via Telegram
 func sendTelegramConfirmation(chatID int64, bookmark *models.Bookmark) {
-	telegramClient := services.NewTelegramApiClient()
+	telegramClient := clients.NewTelegramApiClient()
 	msg := "URL: " + bookmark.URL
 	if len(bookmark.Tags) > 0 {
 		tagNames := make([]string, len(bookmark.Tags))
