@@ -67,6 +67,7 @@ func (r bookmarkRepository) ListBookmarks(offset int, limit int) ([]models.Bookm
 	query := `
 		SELECT id, title, description, thumbnail, url, created_at, updated_at
 		FROM bookmarks
+		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
 	`
 	rows, err := r.db.Query(context.Background(), query, limit, offset)
@@ -96,6 +97,7 @@ func (r bookmarkRepository) ListBookmarksByTag(tagID int, offset int, limit int)
 		FROM bookmarks b
 		INNER JOIN bookmarks_tags bt ON b.id = bt.bookmark_id
 		WHERE bt.tag_id = $1
+		ORDER BY b.created_at DESC
 		LIMIT $2 OFFSET $3
 	`
 	rows, err := r.db.Query(context.Background(), query, tagID, limit, offset)
