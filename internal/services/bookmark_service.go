@@ -19,6 +19,7 @@ type BookmarkService interface {
 	UpdateBookmarkWithTags(id int, fields map[string]interface{}, tags []string) (models.Bookmark, error)
 	// SearchBookmarks performs a paginated text search on title, url, or description
 	SearchBookmarks(query string, page int, pageSize int) ([]models.Bookmark, error)
+	DeleteBookmark(id int) error // Add this method
 }
 
 // bookmarkService implementation of the BookmarkService interface.
@@ -42,7 +43,6 @@ func NewBookmarkServiceWithTags(repo repositories.BookmarkRepository, tagRepo re
 	}
 }
 
- 
 // CreateBookmarkWithTags creates a bookmark and associates tags.
 func (s *bookmarkService) CreateBookmarkWithTags(url, title, description, thumbnail string, tags []string, createdAt time.Time) (models.Bookmark, error) {
 
@@ -230,4 +230,9 @@ func (s *bookmarkService) UpdateBookmarkWithTags(id int, fields map[string]inter
 func (s *bookmarkService) SearchBookmarks(query string, page int, pageSize int) ([]models.Bookmark, error) {
 	offset := (page - 1) * pageSize
 	return s.repo.SearchBookmarks(query, offset, pageSize)
+}
+
+// DeleteBookmark removes a bookmark by its ID.
+func (s *bookmarkService) DeleteBookmark(id int) error {
+	return s.repo.DeleteBookmark(id)
 }
