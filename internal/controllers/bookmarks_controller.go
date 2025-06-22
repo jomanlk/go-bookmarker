@@ -179,3 +179,23 @@ func (bc *BookmarksController) UpdateBookmark(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"bookmark": updatedBookmark})
 }
+
+func (bc *BookmarksController) DeleteBookmark(c *gin.Context) {
+    id := c.Param("id")
+    bookmarkID, err := strconv.Atoi(id)
+    if err != nil {
+        log.Printf("Invalid bookmark ID: %v", err)
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid bookmark ID"})
+        return
+    }
+    bookmarkRepo := repositories.NewBookmarkRepository(bc.DB)
+    tagRepo := repositories.NewTagRepository(bc.DB)
+    bookmarkService := services.NewBookmarkServiceWithTags(bookmarkRepo, tagRepo)
+    err = bookmarkService.DeleteBookmark(bookmarkID)
+    if err != nil {
+        log.Printf("Failed to delete bookmark: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete bookmark"})
+        return
+    }
+    c.Status(http.StatusNoContent)
+}

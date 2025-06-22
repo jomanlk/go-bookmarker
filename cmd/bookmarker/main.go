@@ -121,6 +121,7 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 	r.POST("/bookmarks", bookmarksController.CreateBookmark)
 	r.GET("/bookmarks/:id", bookmarksController.GetBookmark)
 	r.PATCH("/bookmarks/:id", bookmarksController.UpdateBookmark)
+	r.DELETE("/bookmarks/:id", bookmarksController.DeleteBookmark)
 	r.GET("/search", searchController.SearchBookmarks)
 	r.GET("/bookmarks/tag", searchController.GetBookmarksByTag)
 	r.GET("/tags", tagsController.ListTags)

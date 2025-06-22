@@ -18,6 +18,7 @@ type BookmarkRepository interface {
 	UpdateBookmark(id int, fields map[string]interface{}) (models.Bookmark, error)
 	// SearchBookmarks performs a paginated text search on title, url, or description
 	SearchBookmarks(query string, offset int, limit int) ([]models.Bookmark, error)
+	DeleteBookmark(id int) error // Add this method to the interface
 }
 
 type bookmarkRepository struct {
@@ -178,4 +179,16 @@ func (r bookmarkRepository) SearchBookmarks(query string, offset int, limit int)
 // NewBookmarkRepository creates a new instance of bookmarkRepository.
 func NewBookmarkRepository(db *pgxpool.Pool) BookmarkRepository {
 	return &bookmarkRepository{db: db}
+}
+
+// Implement DeleteBookmark for bookmarkRepository
+func (r bookmarkRepository) DeleteBookmark(id int) error {
+	// First, delete all tag relationships for this bookmark
+	_, err := r.db.Exec(context.Background(), "DELETE FROM bookmarks_tags WHERE bookmark_id = $1", id)
+	if err != nil {
+		return err
+	}
+	// Then, delete the bookmark itself
+	_, err = r.db.Exec(context.Background(), "DELETE FROM bookmarks WHERE id = $1", id)
+	return err
 }
