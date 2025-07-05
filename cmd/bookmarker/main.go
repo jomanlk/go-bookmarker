@@ -93,7 +93,6 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
-		// Load Supabase client
 		c.String(http.StatusOK, "pong")
 	})
 
