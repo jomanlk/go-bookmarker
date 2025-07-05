@@ -32,3 +32,4 @@ tests/Bruno/Bookmarker/environments/Bookmarker.bru
 tests/Bruno/Bookmarker/collection.bru
 git-filter-repo
 data/import/*
+data/backup/*

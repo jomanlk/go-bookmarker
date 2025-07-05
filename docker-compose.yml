@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  bookmarker_service:
+    build: .
+    # command: ./bookmarker backup-db
+    container_name: bookmarker_service
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - bookmarker_net
+
+networks:
+  bookmarker_net:
+    driver: bridge
