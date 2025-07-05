@@ -68,10 +68,18 @@ func main() {
 		log.Println("Server exiting")
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "backup-db" {
+		err := backupPostgresDB()
+		if err != nil {
+			log.Fatalf("Backup failed: %v", err)
+		}
+		log.Println("Database backup completed successfully.")
+		return
+	}
 	if len(os.Args) > 1 {
 		log.Fatalf("Unrecognized command: %s", os.Args[1])
 	}
-	log.Fatalf("No command provided. Use 'start-server', 'import-pinboard <filename>', or 'create-user <username> <password>'")
+	log.Fatalf("No command provided. Use 'start-server', 'import-pinboard <filename>', 'create-user <username> <password>', or 'backup-db'")
 }
 
 
@@ -85,6 +93,7 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
+		// Load Supabase client
 		c.String(http.StatusOK, "pong")
 	})
 
@@ -130,3 +139,4 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 
 	return r
 }
+ 

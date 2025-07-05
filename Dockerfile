@@ -9,6 +9,7 @@ RUN go build -o bookmarker ./cmd/bookmarker
 FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates
+RUN apk add postgresql-client
 WORKDIR /app
 COPY --from=builder /app/bookmarker /app/bookmarker
 
