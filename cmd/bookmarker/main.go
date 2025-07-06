@@ -5,7 +5,6 @@ import (
 	"bookmarker/internal/dbutil"
 	"bookmarker/internal/repositories"
 	"bookmarker/internal/services"
-	"bookmarker/internal/utility"
 	"context"
 	"log"
 	"net/http"
@@ -70,7 +69,7 @@ func main() {
 		return
 	}
 	if len(os.Args) > 1 && os.Args[1] == "backup-db" {
-		err := utility.BackupPostgresDB()
+		err := services.BackupPostgresDB()
 		if err != nil {
 			log.Fatalf("Backup failed: %v", err)
 		}
@@ -87,14 +86,18 @@ func main() {
 func setupRouter(db *pgxpool.Pool) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
+	
+	if os.Getenv("APP_ENV") != "dev" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	r := gin.Default()
+	
 
 	// Apply the Gin CORS middleware
 	r.Use(middleware.CorsMiddleware())
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
-
 		c.String(http.StatusOK, "pong")
 	})
 
