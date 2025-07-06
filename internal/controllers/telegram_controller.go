@@ -72,7 +72,7 @@ func (tc *TelegramController) TelegramWebhookHandler(c *gin.Context) {
 
 // validateTelegramToken checks the Telegram webhook token
 func validateTelegramToken(c *gin.Context) bool {
-	secretToken := os.Getenv("TELEGRAM_WEBHOOK_SECRET")
+	secretToken := os.Getenv("WEBHOOK_SECRET")
 	token := c.Query("token")
 	return token == secretToken && secretToken != ""
 }

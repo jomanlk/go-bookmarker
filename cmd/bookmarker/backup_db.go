@@ -9,8 +9,8 @@ import (
 	"bookmarker/internal/clients"
 )
 
-// backupPostgresDB runs pg_dump using environment variables and saves output to a timestamped file.
-func backupPostgresDB() error {
+// BackupPostgresDB runs pg_dump using environment variables and saves output to a timestamped file.
+func BackupPostgresDB() error {
 	pgUser := os.Getenv("DB_USER")
 	pgPassword := os.Getenv("DB_PASS")
 	pgDB := os.Getenv("DB_NAME")

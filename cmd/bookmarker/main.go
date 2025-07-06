@@ -5,6 +5,7 @@ import (
 	"bookmarker/internal/dbutil"
 	"bookmarker/internal/repositories"
 	"bookmarker/internal/services"
+	"bookmarker/internal/utility"
 	"context"
 	"log"
 	"net/http"
@@ -69,7 +70,7 @@ func main() {
 		return
 	}
 	if len(os.Args) > 1 && os.Args[1] == "backup-db" {
-		err := backupPostgresDB()
+		err := utility.BackupPostgresDB()
 		if err != nil {
 			log.Fatalf("Backup failed: %v", err)
 		}
@@ -93,6 +94,7 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
+
 		c.String(http.StatusOK, "pong")
 	})
 
@@ -114,6 +116,7 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 	userController := controllers.NewUserController(authService)
 	telegramController := controllers.NewTelegramController(db)
 	urlController := controllers.NewUrlController()
+	utilityController := controllers.NewUtilityController()
 
 	// Define routes
 	// Public routes
@@ -122,6 +125,8 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 	r.POST("/logout", userController.Logout)
 	// Telegram webhook route
 	r.POST("/telegram/listen", telegramController.TelegramWebhookHandler)
+
+	r.GET("/utility/backup-db", utilityController.BackupDBHandler)
 
 	// Protected routes
 	r.Use(middleware.AuthMiddleware(authService))
@@ -135,7 +140,7 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 	r.GET("/tags", tagsController.ListTags)
 	r.GET("/me", userController.Me)
 	r.GET("/url/preview", urlController.UrlPreviewHandler)
+	
 
 	return r
 }
- 
