@@ -59,7 +59,6 @@ func BackupPostgresDB() error {
 	if err := gzCmd.Run(); err != nil {
 		return err
 	}
-	// Optionally remove the uncompressed file to save space
 	os.Remove(filename)
 
 	// Upload to Supabase after backup (use compressed file)
@@ -68,6 +67,7 @@ func BackupPostgresDB() error {
 	if uploadErr != nil {
 		return fmt.Errorf("backup created but upload to supabase failed: %w", uploadErr)
 	}
+	os.Remove(gzFilename)
 
 	return nil
 }
