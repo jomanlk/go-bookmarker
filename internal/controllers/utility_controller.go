@@ -16,9 +16,16 @@ func NewUtilityController() *UtilityController {
 
 // BackupDBHandler triggers the backup process
 func (uc *UtilityController) BackupDBHandler(c *gin.Context) {
-	token := c.Query("token")
+	type backupRequest struct {
+		Token string `json:"token"`
+	}
+	var req backupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		return
+	}
 	webhookSecret := os.Getenv("WEBHOOK_SECRET")
-	if token == "" || token != webhookSecret {
+	if req.Token == "" || req.Token != webhookSecret {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}

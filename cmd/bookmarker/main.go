@@ -129,7 +129,7 @@ func setupRouter(db *pgxpool.Pool) *gin.Engine {
 	// Telegram webhook route
 	r.POST("/telegram/listen", telegramController.TelegramWebhookHandler)
 
-	r.GET("/utility/backup-db", utilityController.BackupDBHandler)
+	r.POST("/utility/backup-db", utilityController.BackupDBHandler)
 
 	// Protected routes
 	r.Use(middleware.AuthMiddleware(authService))
