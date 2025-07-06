@@ -12,6 +12,7 @@ RUN apk --no-cache add ca-certificates
 RUN apk add postgresql-client
 WORKDIR /app
 COPY --from=builder /app/bookmarker /app/bookmarker
+RUN mkdir -p /app/data/backup
 
 # Expose the port that the application listens on
 EXPOSE 8080

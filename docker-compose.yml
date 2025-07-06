@@ -5,8 +5,8 @@ services:
     build: .
     # command: ./bookmarker backup-db
     container_name: bookmarker_service
-    volumes:
-      - ./data:/app/data
+    # volumes:
+    #   - ./data:/app/data
     env_file:
       - .env
     ports:
